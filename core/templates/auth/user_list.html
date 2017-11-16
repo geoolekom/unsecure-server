@@ -1,0 +1,16 @@
+{% extends 'core/base.html' %}
+{% load common %}
+
+{% block title %}Список пользователей{% endblock %}
+
+{% block content %}
+    <table>
+        {% for user in user_list %}
+            <tr>
+            {% for field in fields %}
+                <td>{{ user|get_from_dict:field }}</td>
+            {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}
