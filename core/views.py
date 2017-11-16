@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
-from django.views.generic import ListView, DetailView
+from django.core.exceptions import PermissionDenied
+from django.urls import reverse_lazy
+from django.views.generic import ListView, DetailView, UpdateView
 
 
 class UserListView(ListView):
@@ -30,3 +32,15 @@ class ProfileView(DetailView):
     def get_object(self, queryset=None):
         return User.objects.raw('SELECT * FROM auth_user WHERE id = {0}'.format(self.request.user.id))
 
+
+class ProfileUpdateView(UpdateView):
+    model = User
+    fields = '__all__'
+    success_url = reverse_lazy('core:user_list')
+
+    def get_object(self, queryset=None):
+        print(self.request.POST)
+        user = super(ProfileUpdateView, self).get_object(queryset=queryset)
+        if user.id != self.request.user.id:
+            raise PermissionDenied('Вы - не этот пользователь')
+        return user
