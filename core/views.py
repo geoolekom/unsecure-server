@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
+from django.http import Http404
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, UpdateView
 
@@ -28,9 +29,24 @@ class UserListView(ListView):
 
 
 class ProfileView(DetailView):
+    model = User
 
     def get_object(self, queryset=None):
-        return User.objects.raw('SELECT * FROM auth_user WHERE id = {0}'.format(self.request.user.id))
+        users = User.objects.raw('SELECT * FROM auth_user WHERE id = {0}'.format(self.kwargs.get('pk')))
+        count = 0
+        for _ in users:
+            count += 1
+        if count:
+            user = users[0]
+        else:
+            user = None
+
+        if not user:
+            raise Http404('Не найдено')
+        elif user.id != self.request.user.id:
+            raise PermissionDenied('Вы - не этот пользователь')
+        else:
+            return user
 
 
 class ProfileUpdateView(UpdateView):
@@ -39,8 +55,7 @@ class ProfileUpdateView(UpdateView):
     success_url = reverse_lazy('core:user_list')
 
     def get_object(self, queryset=None):
-        print(self.request.POST)
         user = super(ProfileUpdateView, self).get_object(queryset=queryset)
-        if user.id != self.request.user.id:
+        if user.id != self.request.user_id:
             raise PermissionDenied('Вы - не этот пользователь')
         return user
